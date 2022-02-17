@@ -1,3 +1,4 @@
+from ssl import SSLSocket
 from flask import Flask, request, send_from_directory, render_template
 from threading import Thread
 import requests
@@ -91,58 +92,40 @@ def categorize_address(address_list):
 
     return categorized_address
 
-category_mother_category_name_dic = {'url':'https://www.amazon.de/gp/bestsellers/lighting/3780981/ref=zg_bs_unv_lighting_2_248297031_1' }
-category_mother_category_url_dic = {'url':'https://www.amazon.de/gp/bestsellers/lighting/3780981/ref=zg_bs_unv_lighting_2_248297031_1'}
+category_mother_category_name_dic = {}
+category_mother_category_url_dic = {}
 checked_child_url_list = []
 
-def find_child_urls(url, mother_url, mother_name):
+def find_child_urls(url):
     try:
-        collected_urls = ['https://www.amazon.de/gp/bestsellers/lighting/248297031/ref=zg_bs_nav_lighting_2_3780981','https://www.amazon.de/gp/bestsellers/lighting/357666011/ref=zg_bs_nav_lighting_2_3780981']
-    #     print("find_child_urls()")
-    #     url = url.split('/ref=')[0]
+        print("find_child_urls()")
+        url = url.split('/ref=')[0]
 
-    #     global checked_child_url_list
-    #     # print(checked_child_url_list)
-    #     # print(url)
-    #     if(url in checked_child_url_list):
-    #         print("This url already checked. Skipping.")
-    #         return []
+        global checked_child_url_list
+        if(url in checked_child_url_list):
+            print("This url already checked. Skipping.")
+            return []
+        checked_child_url_list.append(url)
 
+        child_url = 'http://api.scraperapi.com?api_key=e59b5548e36da5aadaab906ac45d9743&url=' + url
+        r = requests.get(child_url)
+        soup = BeautifulSoup(r.content,'html.parser')
 
-    #     for f in range(1,5):
-    #         print("try: "+str(f))
-    #         response = requests.get(url, proxies=proxies, verify='zyte-smartproxy-ca.crt')
-    #         print(response)
-    #         html_source = response.text
-    #         
-    #         zg_selected_middle = middleof(html_source, 'zg_selected', '</ul>')
-    #         print(zg_selected_middle)
-    #         if(zg_selected_middle!=""):
-    #             break
+        mother_category_name = soup.find('title').text.strip().split('in')[1].strip()
 
-    #     checked_child_url_list.append(url)
+        category_mother_category_name_dic[url] = mother_category_name
+        category_mother_category_url_dic[url] = url
+        try:
+            collected_urls = []
+            child_link_box = soup.find('div',attrs ={'role':'group'}).findAll('div')
+            for child_link in child_link_box:
+                child_link ='https://www.amazon.de' + str(child_link.find('a')['href'])
+                collected_urls.append(child_link)
+            status_text = 'Scraping the child category urls...'
+        except:
+            collected_urls = [url]
+            status_text = f'You have used a child url instead of a mother url. This url does not have any child. Scraping this category..{url}'
 
-    #     if('<ul>' not in zg_selected_middle):
-    #         # url=url.split('/ref=')[0]
-    #         print(" ***** child url -> "+str(url))
-    #         category_mother_category_name_dic[url] = mother_name
-    #         category_mother_category_url_dic[url] = mother_url
-    #         return [url]
-    #     else:
-    #         hrefs = middleof(zg_selected_middle, 'href=\'', '\'', True)
-    #         print("hrefs count: "+str(len(hrefs)))
-    #         print(hrefs)
-
-    #         hrefs_names = middleof(zg_selected_middle, '\'>', '</a>', True)
-    #         print("hrefs_names count: " + str(len(hrefs_names)))
-    #         print(hrefs_names)
-
-    #         soup = BeautifulSoup(response.text, 'html.parser')
-    #         mother_category_name = soup.find('span', {'class': 'zg_selected'}).text.strip()
-
-    #         collected_urls =[]
-    #         for href in hrefs:
-    #             collected_urls += find_child_urls(href, url, mother_category_name)
         return collected_urls
     except Exception as e:
         print("Issue in method >>> find_child_urls -> "+str(e))
@@ -506,7 +489,7 @@ def start_scrapping(mother_url):
     status_text = "finding all child urls ..."
     for c in range(1,5): # trying for multiple times if response only contains 1 child url
         print("Main try: "+str(c))
-        child_urls = find_child_urls(mother_url, "", "")
+        child_urls = find_child_urls(mother_url)
         child_urls_count = len(child_urls)
         print("child_urls_count: "+str(child_urls_count))
         if(child_urls_count>1):
@@ -535,10 +518,10 @@ def start_scrapping(mother_url):
     print("************************************************************************************** Number of item urls: " + str(tot_items))
 
     item_count = 0
-    for item_url in item_urls:
+    for item_url in item_urls[:20]:
 
         if (status_text == 'stopping...'):
-            status_text = "not running"
+            status_text = "Running..."
             return
 
         item_count+=1
