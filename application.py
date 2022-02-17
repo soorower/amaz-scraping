@@ -8,7 +8,7 @@ from datetime import datetime
 
 application = Flask(__name__)
 
-status_text = "running..."
+status_text = "not running"
 
 def middleof(text, left,right,multi=False):
     if(not multi):
@@ -112,8 +112,8 @@ def find_child_urls(url):
         soup = BeautifulSoup(r.content,'html.parser')
 
         mother_category_name = soup.find('title').text.strip().split('in')[1].strip()
-        print(url)
         print(mother_category_name)
+        print(url)
         category_mother_category_name_dic[url] = mother_category_name
         category_mother_category_url_dic[url] = url
         try:
@@ -497,7 +497,7 @@ def start_scrapping(mother_url):
             break
 
     if(status_text=='stopping...'):
-        status_text = "Stopping(start_scrapping): not running"
+        status_text = "not running"
         return
 
 
@@ -510,7 +510,7 @@ def start_scrapping(mother_url):
     item_urls = []
     for child_url in child_urls:
         if (status_text == 'stopping...'):
-            status_text = "When getting item urls: not running"
+            status_text = "not running"
             return
         item_urls += get_bestsellers_items(child_url)
 
@@ -519,10 +519,10 @@ def start_scrapping(mother_url):
     print("************************************************************************************** Number of item urls: " + str(tot_items))
 
     item_count = 0
-    for item_url in item_urls[:20]:
+    for item_url in item_urls:
 
         if (status_text == 'stopping...'):
-            status_text = "Running..."
+            status_text = "not running"
             return
 
         item_count+=1
@@ -531,7 +531,7 @@ def start_scrapping(mother_url):
         #     break
         get_item_details(item_url)
 
-    status_text = "After scraping all products: not running. scraped all "+str(tot_items) + " items."
+    status_text = "not running. scraped all "+str(tot_items) + " items."
 
 
 @application.route('/', methods=['GET','POST'])
@@ -541,7 +541,7 @@ def start_scraping():
         print(mother_url)
 
         global status_text
-        if("running..." in status_text):
+        if("not running" in status_text):
             status_text = "just started scraping process"
             t = Thread(target=start_scrapping, args=(mother_url,))
             t.start()
@@ -565,7 +565,7 @@ def download():
 def stop():
     global status_text
     print(status_text)
-    if("running..." not in status_text):
+    if("not running" not in status_text):
         status_text = "stopping..."
         return "scraping process will stop in few seconds"
     return "nothing is running now"
