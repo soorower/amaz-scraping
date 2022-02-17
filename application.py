@@ -8,7 +8,7 @@ from datetime import datetime
 
 application = Flask(__name__)
 
-status_text = "start: not running"
+status_text = "running..."
 
 def middleof(text, left,right,multi=False):
     if(not multi):
@@ -112,7 +112,8 @@ def find_child_urls(url):
         soup = BeautifulSoup(r.content,'html.parser')
 
         mother_category_name = soup.find('title').text.strip().split('in')[1].strip()
-
+        print(url)
+        print(mother_category_name)
         category_mother_category_name_dic[url] = mother_category_name
         category_mother_category_url_dic[url] = url
         try:
@@ -540,7 +541,7 @@ def start_scraping():
         print(mother_url)
 
         global status_text
-        if("start: not running" in status_text):
+        if("running..." in status_text):
             status_text = "just started scraping process"
             t = Thread(target=start_scrapping, args=(mother_url,))
             t.start()
@@ -564,7 +565,7 @@ def download():
 def stop():
     global status_text
     print(status_text)
-    if("not running" not in status_text):
+    if("running..." not in status_text):
         status_text = "stopping..."
         return "scraping process will stop in few seconds"
     return "nothing is running now"
