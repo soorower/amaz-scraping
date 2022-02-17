@@ -8,7 +8,7 @@ from datetime import datetime
 
 application = Flask(__name__)
 
-status_text = "not running"
+status_text = "start: not running"
 
 def middleof(text, left,right,multi=False):
     if(not multi):
@@ -496,7 +496,7 @@ def start_scrapping(mother_url):
             break
 
     if(status_text=='stopping...'):
-        status_text = "not running"
+        status_text = "Stopping(start_scrapping): not running"
         return
 
 
@@ -509,7 +509,7 @@ def start_scrapping(mother_url):
     item_urls = []
     for child_url in child_urls:
         if (status_text == 'stopping...'):
-            status_text = "not running"
+            status_text = "When getting item urls: not running"
             return
         item_urls += get_bestsellers_items(child_url)
 
@@ -530,7 +530,7 @@ def start_scrapping(mother_url):
         #     break
         get_item_details(item_url)
 
-    status_text = "not running. scraped all "+str(tot_items) + " items."
+    status_text = "After scraping all products: not running. scraped all "+str(tot_items) + " items."
 
 
 @application.route('/', methods=['GET','POST'])
@@ -540,7 +540,7 @@ def start_scraping():
         print(mother_url)
 
         global status_text
-        if("not running" in status_text):
+        if("start: not running" in status_text):
             status_text = "just started scraping process"
             t = Thread(target=start_scrapping, args=(mother_url,))
             t.start()
